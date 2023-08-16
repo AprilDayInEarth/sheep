@@ -492,4 +492,8 @@ button:focus-visible {
   top: 0;
   left: 0;
 }
+
+.modal button {
+  color: white;
+}
 </style>
