@@ -8,7 +8,8 @@
           <div class="scene-inner">
             <div v-for="(item, index) in scene" class="symbol" :key="item.id" :style="{
               transform: `translateX(${item.status === 0 ? item.x : item.status === 1 ? sortedQueue[item.id] : -850}%) translateY(${item.status === 0 ? item.y : 745}%)`,
-              opacity: item.status < 2 ? 1 : 0 }" @click="clickSymbol(index)">
+              opacity: item.status < 2 ? 1 : 0
+            }" @click="clickSymbol(index)">
               <div class="symbol-inner" :style="{ backgroundColor: item.isCover ? '#999' : 'white' }">
                 <img style="width:100%;" :src="item.icon" alt="">
               </div>
@@ -16,12 +17,12 @@
           </div>
         </div>
         <div class="queue-container flex-container flex-center"></div>
-        <div class="flex-container flex-between">
-          <button class="flex-grow" @click="pop">弹出</button>
-          <button class="flex-grow" @click="undo">撤销</button>
-          <button class="flex-grow" @click="wash">洗牌</button>
-          <button class="flex-grow" @click="levelUp">下一关</button>
-        </div>
+        <!-- <div class="flex-container flex-between">
+                <button class="flex-grow" @click="pop">弹出</button>
+                <button class="flex-grow" @click="undo">撤销</button>
+                <button class="flex-grow" @click="wash">洗牌</button>
+                <button class="flex-grow" @click="levelUp">下一关</button>
+              </div> -->
         <div class="modal" v-if="finished">
           <h1>{{ tipText }}</h1>
           <button @click="restart">再来一次</button>
@@ -33,13 +34,21 @@
 
 <script setup>
 import { ref, watchEffect } from 'vue'
+const level = ref(1); // 等级
+const queue = ref([]);// 下方选中数据
+const sortedQueue = ref([]);// 排序内容
+const finished = ref(false);// 是否完成
+const tipText = ref('');// 提示
+const animating = ref(false);// 动画
+// 设置最大随机关卡
+const maxLevel = 2;
 // 生成随机id
 const randomString = (len) => {
   const pool = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let res = '';
   while (len >= 0) {
     res += pool[Math.floor(pool.length * Math.random())];
-    len --;
+    len--;
   }
   return res;
 };
@@ -67,8 +76,6 @@ const icons = [
   '../assets/image/7.png',
   '../assets/image/8.png'
 ]
-// 设置最大随机关卡
-const maxLevel = 2;
 // 以下感谢大佬们提供的算法
 const makeScene = (level) => {
   // 获取当前关卡
@@ -80,7 +87,7 @@ const makeScene = (level) => {
   //  最终的元数据数组
   const scene = [];
   // 确定范围
-  //在一般情下 translate 的偏移量，如果是百分比的话，是按照自身的宽度或者高度去计算的，所以最大的偏移范围是百分800%
+  // 在一般情下 translate 的偏移量，如果是百分比的话，是按照自身的宽度或者高度去计算的，所以最大的偏移范围是百分800%
   // 然后通过Math.random 会小于百分之八百
   // 所以就会形成当前区间的随机数
   const range = [
@@ -124,41 +131,35 @@ const makeScene = (level) => {
   // 返回元数据
   return scene;
 };
-
-// 洗牌
-const washScene = (level, scene) => {
-  // 洗牌的随机逻辑与初始化相同,不在赘述
-  const updateScene = scene.slice().sort(() => Math.random() - 0.5);
-  const offsetPool = [0, 25, -25, 50, -50].slice(0, 1 + level);
-  const range = [
-    [2, 6],
-    [1, 6],
-    [1, 7],
-    [0, 7],
-    [0, 8],
-  ][Math.min(4, level - 1)];
-  const randomSet = (symbol) => {
-    const offset = offsetPool[Math.floor(offsetPool.length * Math.random())];
-    const row = range[0] + Math.floor((range[1] - range[0]) * Math.random());
-    const column = range[0] + Math.floor((range[1] - range[0]) * Math.random());
-    symbol.x = column * 100 + offset;
-    symbol.y = row * 100 + offset;
-    symbol.isCover = false;
-  };
-  //遍历初始化数组
-  for (const symbol of updateScene) {
-    // 碰见已经选中的不处理
-    if (symbol.status !== 0) continue;
-    randomSet(symbol);
-  }
-};
 const scene = ref(makeScene(1)) // 元数据
-const level = ref(1); // 等级
-const queue = ref([]);// 下方选中数据
-const sortedQueue = ref([]);// 排序内容
-const finished = ref(false);// 是否完成
-const tipText = ref('');// 提示
-const animating = ref(false);// 动画
+// 洗牌
+// const washScene = (level, scene) => {
+//     // 洗牌的随机逻辑与初始化相同,不在赘述
+//     const updateScene = scene.slice().sort(() => Math.random() - 0.5);
+//     const offsetPool = [0, 25, -25, 50, -50].slice(0, 1 + level);
+//     const range = [
+//         [2, 6],
+//         [1, 6],
+//         [1, 7],
+//         [0, 7],
+//         [0, 8],
+//     ][Math.min(4, level - 1)];
+//     const randomSet = (symbol) => {
+//         const offset = offsetPool[Math.floor(offsetPool.length * Math.random())];
+//         const row = range[0] + Math.floor((range[1] - range[0]) * Math.random());
+//         const column = range[0] + Math.floor((range[1] - range[0]) * Math.random());
+//         symbol.x = column * 100 + offset;
+//         symbol.y = row * 100 + offset;
+//         symbol.isCover = false;
+//     };
+//     //遍历初始化数组
+//     for (const symbol of updateScene) {
+//         // 碰见已经选中的不处理
+//         if (symbol.status !== 0) continue;
+//         randomSet(symbol);
+//     }
+// };
+
 // 检查是否被覆盖
 const checkCover = (value) => {
   // 深拷贝一份
@@ -176,7 +177,7 @@ const checkCover = (value) => {
     // 拿到坐标
     const { x: x1, y: y1 } = cur;
     // 为了拿到他们的对角坐标，所以要加上100
-    //之所以要加上100 是由于 他的总体是800% 也就是一个格子的换算宽度是100
+    // 之所以要加上100 是由于 他的总体是800% 也就是一个格子的换算宽度是100
     const x2 = x1 + 100, y2 = y1 + 100;
     // 第二个来循环来判断他的覆盖情况
     for (let j = i + 1; j < updateScene.length; j++) {
@@ -197,55 +198,54 @@ const checkCover = (value) => {
   scene.value = updateScene;
 };
 
-// 弹出
-const pop = () => {
-  // 如果选中队列中没有数据那么就退出
-  if (!queue.value.length) return;
-  const updateQueue = queue.value.slice();
-  const symbol = updateQueue.shift();
-  if (!symbol) return;
-  const find = scene.value.find((s) => s.id === symbol.id);
-  if (find) {
-    // 随机一个位置
-    queue.value = updateQueue;
-    find.status = 0;
-    find.x = 100 * Math.floor(8 * Math.random());
-    find.y = 700;
-    // 遮挡检测
-    checkCover(scene.value);
-  }
-};
-// 撤销
-const undo = () => {
-  // 和弹出相同逻辑
-  // 只是返回的位置为原来位置
-  if (!queue.value.length) return;
-  const updateQueue = queue.value.slice();
-  const symbol = updateQueue.pop();
-  if (!symbol) return;
-  const find = scene.value.find((s) => s.id === symbol.id);
-  if (find) {
-    queue.value = updateQueue;
-    find.status = 0;
-    checkCover(scene);
-  }
-};
-// 洗牌
-const wash = () => {
-  checkCover(washScene(level.value, scene.value));
-};
-
-// 下一关
-const levelUp = () => {
-  if (level.value >= maxLevel) {
-    return;
-  }
-  finished.value = false;
-  level.value = level.value + 1;
-  queue.value = [];
-  // 初始化场景并且检查是否被覆盖
-  checkCover(makeScene(level.value + 1));
-};
+// // 弹出
+// const pop = () => {
+//   // 如果选中队列中没有数据那么就退出
+//   if (!queue.value.length) return;
+//   const updateQueue = queue.value.slice();
+//   const symbol = updateQueue.shift();
+//   if (!symbol) return;
+//   const find = scene.value.find((s) => s.id === symbol.id);
+//   if (find) {
+//     // 随机一个位置
+//     queue.value = updateQueue;
+//     find.status = 0;
+//     find.x = 100 * Math.floor(8 * Math.random());
+//     find.y = 700;
+//     // 遮挡检测
+//     checkCover(scene.value);
+//   }
+// };
+// // 撤销
+// const undo = () => {
+//   // 和弹出相同逻辑
+//   // 只是返回的位置为原来位置
+//   if (!queue.value.length) return;
+//   const updateQueue = queue.value.slice();
+//   const symbol = updateQueue.pop();
+//   if (!symbol) return;
+//   const find = scene.value.find((s) => s.id === symbol.id);
+//   if (find) {
+//     queue.value = updateQueue;
+//     find.status = 0;
+//     checkCover(scene);
+//   }
+// };
+// // 洗牌
+// const wash = () => {
+//   checkCover(washScene(level.value, scene.value));
+// };
+// // 下一关
+// const levelUp = () => {
+//   if (level.value >= maxLevel) {
+//     return;
+//   }
+//   finished.value = false;
+//   level.value = level.value + 1;
+//   queue.value = [];
+//   // 初始化场景并且检查是否被覆盖
+//   checkCover(makeScene(level.value + 1));
+// };
 // 重开
 const restart = () => {
   // 初始化内容
@@ -255,7 +255,6 @@ const restart = () => {
   // 第一关初始化，并开启遮挡检查
   checkCover(makeScene(1));
 };
-
 // 点击item
 const clickSymbol = async (idx) => {
   // 如果已经完成了，就不处理
@@ -334,7 +333,7 @@ watchEffect(() => {
     updateSortedQueue[symbol.id] = x;
     x += 100;
   }
-  //赋值 ，这个是为了将选中的排序后的内容移动到队列区
+  // 赋值，这个是为了将选中的排序后的内容移动到队列区
   sortedQueue.value = updateSortedQueue
   // 检查覆盖情况
   checkCover(scene.value);
